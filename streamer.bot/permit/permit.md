@@ -28,3 +28,11 @@ Create the following sub-actions:
 
 The C# code handles the command-specific logic, while the shared `permit action` performs the actual permit operation.
 
+### Usage
+
+```text
+!permit <username> [duration in seconds]
+```
+
+The duration is optional. If omitted, the `permitDuration` global is used. The minimum duration is `60` seconds.
+

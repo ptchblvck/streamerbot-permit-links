@@ -22,9 +22,10 @@ public class CPHInline
             return false;
         }
 
-        // Prepare standardized arguments for the central permit action
+        // Prepare standardized arguments for the central permit action.
+        // No explicit duration is passed, so the shared action uses the
+        // configured `permitDuration` global for raiders.
         CPH.SetArgument("permitUsername", username);
-        CPH.SetArgument("permitDuration", 60);
         CPH.SetArgument("permitSource", "raid");
 
         return true;

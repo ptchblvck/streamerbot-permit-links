@@ -58,8 +58,18 @@ public class CPHInline
         // Get and validate duration
         // --------------------------------------------------
 
-        int duration = 60;
+        // Default comes from the `permitDuration` global so it can be
+        // adjusted in Streamer.bot without touching code.
+        int duration = CPH.GetGlobalVar<int>("permitDuration", true);
 
+        // Fallback if the global is missing or invalid
+        if (duration < 60)
+        {
+            duration = 60;
+        }
+
+        // An explicit duration argument (e.g. `!permit <user> 120`)
+        // overrides the global default.
         if (CPH.TryGetArg("permitDuration", out string durationString) &&
             !string.IsNullOrWhiteSpace(durationString))
         {
@@ -88,6 +98,12 @@ public class CPHInline
 
         // Persist the permit
         CPH.SetGlobalVar(globalName, expiry, true);
+
+        // Store the source so the monitor can treat raid permits as
+        // single-use: a raid permit ends after the raider posts their
+        // first link, while a command permit lasts the full window.
+        string sourceGlobalName = $"permit_source_{username}";
+        CPH.SetGlobalVar(sourceGlobalName, source, true);
 
 
         // --------------------------------------------------

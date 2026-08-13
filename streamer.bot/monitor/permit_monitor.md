@@ -82,3 +82,15 @@ Optionally, add a sound notification:
 **Add → Core → Sounds → Play Sound**
 
 and select the sound file you want Streamer.bot to play.
+
+### Always-Permitted Users
+
+Users listed in the `alwaysPermitUsers` global are always allowed to post links and are exempt from monitoring and the link-spam protection. Set it to a comma-separated list of usernames (e.g. `friend1,friend2`), or leave it empty to disable.
+
+### Permit Duration
+
+A permit lasts for the full configured `permitDuration` window. While a user has a valid permit, their links are allowed and are not consumed, so they can keep posting links until the permit expires.
+
+### Raid Permits
+
+Raid permits are an exception to the above: they are **single-use**. When a raider with a raid permit posts their first link, it is allowed and the permit is immediately consumed. Use this if you want raiders to post their art and then be done. If a raider never posts a link, their permit expires after `permitDuration`.
