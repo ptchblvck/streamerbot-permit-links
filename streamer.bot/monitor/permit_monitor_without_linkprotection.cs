@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 public class CPHInline
 {
@@ -17,62 +18,100 @@ public class CPHInline
             .Trim()
             .ToLowerInvariant();
 
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        // ============================================================
+        // ALWAYS-PERMITTED LIST
+        // ============================================================
+
+        // Users listed in the `alwaysPermitUsers` global can always post
+        // links and are exempt from monitoring.
+        string alwaysPermitList = CPH.GetGlobalVar<string>("alwaysPermitUsers", true);
+
+        if (!string.IsNullOrWhiteSpace(alwaysPermitList))
+        {
+            foreach (string entry in alwaysPermitList.Split(
+                new[] { ',', ' ', ';' },
+                StringSplitOptions.RemoveEmptyEntries
+            ))
+            {
+                if (string.Equals(
+                    entry.Replace("@", "").Trim(),
+                    username,
+                    StringComparison.OrdinalIgnoreCase
+                ))
+                {
+                    CPH.LogInfo(
+                        $"[LINK PERMIT] {username} is on the always-permitted list."
+                    );
+
+                    return false;
+                }
+            }
+        }
+
+        // ============================================================
+        // LINK PERMIT
+        // ============================================================
+
         // Build permit global name
         string globalName = $"permit_link_{username}";
 
         // Get persisted permit
         long? expiry = CPH.GetGlobalVar<long?>(globalName, true);
 
-        // No permit exists
-        if (!expiry.HasValue)
+        // Valid permit — allow the link.
+        if (expiry.HasValue && expiry.Value >= now)
         {
-            CPH.TwitchDeleteChatMessage(messageId, true);
+            // A raid permit is single-use: once the raider posts their
+            // first link (e.g. their art), the permit is consumed.
+            // A command permit lasts the full configured window.
+            string source = CPH.GetGlobalVar<string>($"permit_source_{username}", true);
 
-            CPH.LogInfo(
-                $"[LINK BLOCK] {username} tried to post: {message}"
-            );
+            if (source == "raid")
+            {
+                CPH.UnsetGlobalVar(globalName, true);
+                CPH.UnsetGlobalVar($"permit_source_{username}", true);
 
-            CPH.SendMessage(
-                $"@{username}, links are not allowed unless you have a permit.",
-                true,
-                true
-            );
+                CPH.LogInfo(
+                    $"[LINK PERMIT] Allowed link from raider {username}; permit consumed."
+                );
+            }
+            else
+            {
+                CPH.LogInfo(
+                    $"[LINK PERMIT] Allowed link from {username}"
+                );
+            }
 
-            return true;
+            // Stop the rest of the Streamer.bot action.
+            // The message is NOT deleted.
+            return false;
         }
 
-        // Current Unix timestamp
-        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-        // Permit expired
-        if (expiry.Value < now)
+        // Permit expired — clean it up
+        if (expiry.HasValue)
         {
             CPH.UnsetGlobalVar(globalName, true);
-
-            CPH.TwitchDeleteChatMessage(messageId, true);
-
-            CPH.LogInfo(
-                $"[LINK BLOCK] {username} tried to post with an expired permit: {message}"
-            );
-
-            CPH.SendMessage(
-                $"@{username}, links are not allowed unless you have a permit.",
-                true,
-                true
-            );
-
-            return true;
+            CPH.UnsetGlobalVar($"permit_source_{username}", true);
         }
 
-        // Valid permit — consume it
-        CPH.UnsetGlobalVar(globalName, true);
+        // ============================================================
+        // NO PERMIT
+        // ============================================================
+
+        CPH.TwitchDeleteChatMessage(messageId, true);
 
         CPH.LogInfo(
-            $"[LINK PERMIT] Allowed link from {username}"
+            $"[LINK BLOCK] {username} tried to post: {message}"
         );
 
-        // Stop the rest of the Streamer.bot action.
-        // The message is NOT deleted.
-        return false;
+        CPH.SendMessage(
+            $"@{username}, links are not allowed unless you have a permit.",
+            true,
+            true
+        );
+
+        return true;
     }
 }

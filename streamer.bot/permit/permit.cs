@@ -73,10 +73,16 @@ public class CPHInline
             }
         }
 
-        // Prepare standardized arguments for the central permit action
+        // Prepare standardized arguments for the central permit action.
+        // Only pass an explicit duration when the user provided one, so the
+        // shared action falls back to the `permitDuration` global otherwise.
         CPH.SetArgument("permitUsername", username);
-        CPH.SetArgument("permitDuration", duration);
         CPH.SetArgument("permitSource", "command");
+
+        if (parts.Length == 2)
+        {
+            CPH.SetArgument("permitDuration", duration);
+        }
 
         return true;
     }

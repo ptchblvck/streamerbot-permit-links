@@ -15,3 +15,5 @@ Create a new sub-action:
 3. Save the action as `permit action`.
 
 This action is subsequently called by both the `!permit` command and the raid action.
+
+The default permit duration comes from the `permitDuration` global. An explicit duration passed by the `!permit` command overrides the global default.

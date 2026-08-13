@@ -11,8 +11,22 @@ The system is designed to allow trusted users to post links temporarily without 
 * **Link monitoring** — Detects links posted by regular chatters and handles them through the permit system.
 * **Configurable link-spam protection** — Limits how many links can be posted within a configurable time window and applies a configurable timeout.
 * **Role-aware monitoring** — Moderators, VIPs, and the streamer are excluded from regular link monitoring.
-* **Configurable raid behavior** — Optionally permit links indefinitely for raiders.
+* **Always-permitted users** — An easily adjustable list of users who can always post links.
+* **Configurable raid behavior** — Optionally auto-permit raiders with a single-use link permit, controlled by the `alwaysPermitLinksForRaiders` global.
 * **Centralized configuration** — Important settings are stored as Streamer.bot global variables.
+
+## What's Changed
+
+This update overhauls how permits work:
+
+* **Permits are time windows, not one-link passes** — a `!permit` user can keep posting links for the full permit duration instead of having the permit consumed after a single link.
+* **Configurable permit duration** — permit length now comes from the `permitDuration` global (default `300` seconds, minimum `60`) instead of being hardcoded per handler. `!permit <user> <seconds>` still overrides it for a single grant.
+* **Single-use raid permits** — a raider gets a permit for up to `permitDuration`, but the permit ends as soon as they post their first link (e.g. their art). If they never post, it simply expires.
+* **`alwaysPermitUsers` whitelist** — a comma-separated list of users who can always post links and are exempt from monitoring and spam protection.
+* **Raid toggle** — `alwaysPermitLinksForRaiders` controls whether incoming raids auto-grant permits.
+* **Clearer spam semantics** — the spam timeout triggers on the first link *above* `linkSpamLimit` within `linkSpamWindow` seconds; permitted and whitelisted users are exempt.
+* **Monitor parity** — `permit_monitor_without_linkprotection.cs` now mirrors the main monitor's whitelist/permit/raid logic so both monitors behave identically.
+* **Regenerated export** — [`streamerbot_export.md`](./streamerbot_export.md) was re-generated and all embedded code was verified to match the `.cs` sources.
 
 ## Repository Structure
 
@@ -72,6 +86,7 @@ Importing the export is the quickest way to get the complete setup into Streamer
 
    * `permitDuration`
    * `alwaysPermitLinksForRaiders`
+   * `alwaysPermitUsers`
    * `linkSpamLimit`
    * `linkSpamWindow`
    * `linkSpamTimeout`
@@ -207,7 +222,7 @@ For example:
 linkSpamLimit = 3
 ```
 
-allows three links within the window before the configured timeout behavior is triggered.
+allows three links within the window; the next link after that triggers the configured timeout behavior.
 
 ### `linkSpamWindow`
 
@@ -263,6 +278,14 @@ if you want links from raiders to be permitted according to the raid-specific lo
 
 The raid trigger itself can also be configured with a minimum raid size so that small raids do not necessarily invoke the action.
 
+### How raid permits work
+
+When `alwaysPermitLinksForRaiders` is `true`, the raider receives a link permit that lasts up to `permitDuration` seconds (default `300`, i.e. 5 minutes).
+
+Raid permits are **single-use**: the raider's first link is allowed and immediately ends the permit. This is intended for channels that expect raiders to post their art ("art tax") and then be done. If the raider never posts a link, the permit simply expires after `permitDuration`.
+
+`!permit` remains a pure time window — a command-permitted user can keep posting links until the duration expires.
+
 ---
 
 # Alternative Monitor
@@ -285,7 +308,7 @@ Most of the behavior can be changed without editing the C# code.
 
 ## Change Permit Duration
 
-Change:
+Change the `permitDuration` global. This is the default permit length used by `!permit`, raids, and when no explicit duration is given:
 
 ```text
 permitDuration
@@ -298,6 +321,26 @@ permitDuration = 120
 ```
 
 would configure a 120-second permit duration.
+
+A permit lasts for the full configured duration, so a permitted user can keep posting links until it expires.
+
+## Always-Permitted Users
+
+Users on the `alwaysPermitUsers` list can always post links and are exempt from monitoring and the link-spam protection.
+
+Set it to a comma-separated list of usernames:
+
+```text
+alwaysPermitUsers = friend1,friend2
+```
+
+For example:
+
+```text
+alwaysPermitUsers = mymod,editorbot
+```
+
+would allow `mymod` and `editorbot` to post links without a permit. Leave the variable empty to disable the list.
 
 ## Change Link Spam Threshold
 
@@ -387,7 +430,7 @@ Check that:
 
 ## Link spam protection behaves unexpectedly
 
-Check the five global variables and especially:
+Check the global variables and especially:
 
 ```text
 linkSpamLimit
@@ -396,6 +439,8 @@ linkSpamTimeout
 ```
 
 Make sure they contain numeric values and that `linkSpamWindow` is at least `10` seconds.
+
+Remember that users with a valid permit or on the `alwaysPermitUsers` list are exempt from the link-spam protection, so spam timeouts only apply to users without a permit.
 
 ---
 

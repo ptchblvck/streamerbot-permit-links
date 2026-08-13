@@ -23,3 +23,7 @@ Create the following sub-actions:
    * Select `permit action`.
 
 The `alwaysPermitLinksForRaiders` global controls whether raiders should receive special link permissions.
+
+The duration of a raid permit is taken from the `permitDuration` global.
+
+Raid permits are **single-use**: the raider's first posted link is allowed and immediately ends the permit. If they never post a link, the permit expires after `permitDuration`.
