@@ -12,8 +12,21 @@ The system is designed to allow trusted users to post links temporarily without 
 * **Configurable link-spam protection** — Limits how many links can be posted within a configurable time window and applies a configurable timeout.
 * **Role-aware monitoring** — Moderators, VIPs, and the streamer are excluded from regular link monitoring.
 * **Always-permitted users** — An easily adjustable list of users who can always post links.
-* **Configurable raid behavior** — Optionally permit links indefinitely for raiders.
+* **Configurable raid behavior** — Optionally auto-permit raiders with a single-use link permit, controlled by the `alwaysPermitLinksForRaiders` global.
 * **Centralized configuration** — Important settings are stored as Streamer.bot global variables.
+
+## What's Changed
+
+This update overhauls how permits work:
+
+* **Permits are time windows, not one-link passes** — a `!permit` user can keep posting links for the full permit duration instead of having the permit consumed after a single link.
+* **Configurable permit duration** — permit length now comes from the `permitDuration` global (default `300` seconds, minimum `60`) instead of being hardcoded per handler. `!permit <user> <seconds>` still overrides it for a single grant.
+* **Single-use raid permits** — a raider gets a permit for up to `permitDuration`, but the permit ends as soon as they post their first link (e.g. their art). If they never post, it simply expires.
+* **`alwaysPermitUsers` whitelist** — a comma-separated list of users who can always post links and are exempt from monitoring and spam protection.
+* **Raid toggle** — `alwaysPermitLinksForRaiders` controls whether incoming raids auto-grant permits.
+* **Clearer spam semantics** — the spam timeout triggers on the first link *above* `linkSpamLimit` within `linkSpamWindow` seconds; permitted and whitelisted users are exempt.
+* **Monitor parity** — `permit_monitor_without_linkprotection.cs` now mirrors the main monitor's whitelist/permit/raid logic so both monitors behave identically.
+* **Regenerated export** — [`streamerbot_export.md`](./streamerbot_export.md) was re-generated and all embedded code was verified to match the `.cs` sources.
 
 ## Repository Structure
 
