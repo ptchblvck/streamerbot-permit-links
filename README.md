@@ -1,5 +1,21 @@
 # Streamer.bot Permit Link Management
 
+---
+
+> **ℹ️ INFO**
+> [2026-08-24] As of now this streamerbot "plugin" is deprecated. There is a way better solution out there for better customization, so I'll link to that one here:
+
+# Twitch Sentry
+
+Please make sure to use [Twitch Sentry](https://github.com/aaskjer/TwitchSentry) instead of the link permit system. All credits to [aaskjer](https://github.com/aaskjer) who was doing an amazing job in the creation of this.
+
+
+---
+
+# DEPRECATED
+
+---
+
 A collection of [Streamer.bot](https://streamer.bot/) C# actions for managing Twitch link permissions, including temporary link permits, raid-based permits, and automatic link monitoring.
 
 The system is designed to allow trusted users to post links temporarily without requiring broad, permanent link permissions. It can also automatically permit links for incoming raids and monitor regular chatters for link spam.
